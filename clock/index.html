@@ -3,69 +3,66 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agnes Retro Clock</title>
+  <title>Nes Focus Clock</title>
+
   <style>
     :root{
       --pink: #f7bfc5;
       --yellow: #f6cf4f;
       --blue: #3d42d8;
-      --cream: #f7efe6;
-      --shadow: 0 20px 60px rgba(0,0,0,.18);
-      --radius: 28px;
+
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+
+      /* base design size (for scaling) */
+      --base-w: 820;
+      --base-h: 520;
     }
 
-    html,body{ height:100%; }
-    body{
+    html,body{
+      height:100%;
       margin:0;
-      background: transparent; /* luar transparan */
-      display:grid;
-      place-items:center;
+      background: transparent; /* IMPORTANT: outside is transparent */
+      overflow:hidden;         /* IMPORTANT: avoid scrollbars in embeds */
       font-family: var(--sans);
     }
 
-    /* STAGE = transparan, cuma buat center */
+    /* Notion iframe container */
     .stage{
-      width: min(820px, 96vw);
-      aspect-ratio: 820 / 520;
-      display:grid;
-      place-items:center;
-      background: transparent; /* transparan */
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      position: relative;
     }
 
-    /* CARD = kotak unyu */
+    /* This element gets scaled to fit the iframe */
+    .scale{
+      width: calc(var(--base-w) * 1px);
+      height: calc(var(--base-h) * 1px);
+      transform-origin: top left;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Transparent card wrapper (no cream, no shadow) */
     .card{
       width: 100%;
       height: 100%;
-      border-radius: var(--radius);
-      background: var(--cream);
-      overflow:hidden;
+      background: transparent;
       position: relative;
-      box-shadow: var(--shadow);
       display:grid;
       place-items:center;
+      overflow: visible;
     }
 
-    /* soft blobs (kalau masih mau vibe pastel, tapi gak ganggu) */
-    .blob{
-      position:absolute;
-      width: 55%;
-      height: 55%;
-      border-radius: 999px;
-      background: var(--pink);
-      opacity: .35; /* diturunin biar subtle */
-    }
-    .blob.b1{ left:-14%; top: -18%; transform: rotate(12deg); }
-    .blob.b2{ right:-18%; bottom:-22%; transform: rotate(-8deg); opacity:.25; }
-
+    /* CLOCK */
     .clockWrap{
       position: relative;
       width: 78%;
       height: 64%;
       display:grid;
       place-items:center;
-      z-index: 2;
     }
 
     .clock{
@@ -73,27 +70,30 @@
       height: 100%;
       position: relative;
       transform: rotate(-10deg);
-      filter: drop-shadow(0 24px 50px rgba(0,0,0,.22));
       transform-origin: 65% 70%;
       animation: wobble 3.6s ease-in-out infinite;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.18));
     }
+
     @keyframes wobble{
       0%,100%{ transform: rotate(-10deg) translateY(0); }
       50%{ transform: rotate(-9deg) translateY(2px); }
     }
 
-    /* base shadow */
+    /* base shadow under the clock */
     .stand{
       position:absolute;
       left: 52%;
       bottom: -10%;
       width: 38%;
       height: 18%;
-      background: rgba(0,0,0,.07);
+      background: rgba(0,0,0,.09);
       border-radius: 999px;
       transform: translateX(-50%) rotate(10deg);
+      filter: blur(.2px);
     }
 
+    /* main body */
     .body{
       position:absolute;
       inset: 8% 6% 18% 10%;
@@ -103,6 +103,7 @@
       box-shadow: inset 0 -10px 0 rgba(0,0,0,.06);
     }
 
+    /* side thickness */
     .side{
       position:absolute;
       left: 4%;
@@ -113,6 +114,7 @@
       border-radius: 26px;
       transform: skewY(-6deg);
     }
+
     .moon{
       position:absolute;
       left: 7%;
@@ -125,6 +127,7 @@
       opacity: .95;
     }
 
+    /* top buttons */
     .btnLong{
       position:absolute;
       top: 4%;
@@ -137,6 +140,7 @@
       transform: translateX(-50%);
       box-shadow: 0 8px 0 rgba(0,0,0,.08);
     }
+
     .btnSmall{
       position:absolute;
       top: 10%;
@@ -149,6 +153,7 @@
       box-shadow: 0 8px 0 rgba(0,0,0,.08);
     }
 
+    /* front frame */
     .frame{
       position:absolute;
       inset: 24% 10% 26% 20%;
@@ -158,12 +163,13 @@
       box-shadow: inset 0 0 0 8px rgba(255,255,255,.45);
     }
 
+    /* display panels */
     .panel{
       position:absolute;
       top: 18%;
       bottom: 18%;
       width: 40%;
-      background: rgba(255,255,255,.84);
+      background: rgba(255,255,255,.86);
       border-radius: 16px;
       border: 3px solid rgba(61,66,216,.25);
       box-shadow: inset 0 0 0 6px rgba(255,255,255,.55);
@@ -173,6 +179,7 @@
     .panel.left{ left: 8%; }
     .panel.right{ right: 8%; }
 
+    /* digits */
     .digit{
       font-family: var(--mono);
       font-weight: 900;
@@ -182,9 +189,10 @@
       line-height: 1;
       user-select:none;
     }
-    .digit.h{ font-size: clamp(42px, 7vw, 96px); opacity: .95; }
-    .digit.m{ font-size: clamp(56px, 9vw, 118px); }
+    .digit.h{ font-size: 96px; opacity: .95; }
+    .digit.m{ font-size: 118px; }
 
+    /* small dots on left */
     .dots{
       position:absolute;
       left: 6%;
@@ -200,6 +208,7 @@
       background: var(--blue);
     }
 
+    /* battery bars */
     .bars{
       position:absolute;
       right: 12%;
@@ -217,60 +226,52 @@
     .b3{ height: 75%; opacity:.7; }
     .b4{ height: 95%; }
 
-    .caption{
-      position:absolute;
-      left: 3.5%;
-      bottom: 3.5%;
-      font-size: 12px;
-      color: rgba(61,66,216,.85);
-      font-weight: 700;
-      letter-spacing:.2px;
-      z-index: 3;
+    /* Compact behavior on very small iframes */
+    @media (max-width: 520px){
+      .clock{ transform: rotate(-6deg); }
     }
   </style>
 </head>
 
 <body>
   <div class="stage">
-    <div class="card">
-      <div class="blob b1"></div>
-      <div class="blob b2"></div>
+    <div class="scale" id="scale">
+      <div class="card">
+        <div class="clockWrap">
+          <div class="clock">
+            <div class="stand"></div>
+            <div class="side"></div>
+            <div class="moon"></div>
 
-      <div class="clockWrap">
-        <div class="clock">
-          <div class="stand"></div>
-          <div class="side"></div>
-          <div class="moon"></div>
-          <div class="body"></div>
+            <div class="body"></div>
+            <div class="btnSmall"></div>
+            <div class="btnLong"></div>
 
-          <div class="btnSmall"></div>
-          <div class="btnLong"></div>
+            <div class="frame">
+              <div class="dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
 
-          <div class="frame">
-            <div class="dots">
-              <div class="dot"></div>
-              <div class="dot"></div>
-              <div class="dot"></div>
-            </div>
+              <div class="panel left"><div class="digit h" id="h">00</div></div>
+              <div class="panel right"><div class="digit m" id="m">00</div></div>
 
-            <div class="panel left"><div class="digit h" id="h">00</div></div>
-            <div class="panel right"><div class="digit m" id="m">00</div></div>
-
-            <div class="bars">
-              <div class="bar b1"></div>
-              <div class="bar b2"></div>
-              <div class="bar b3"></div>
-              <div class="bar b4"></div>
+              <div class="bars">
+                <div class="bar b1"></div>
+                <div class="bar b2"></div>
+                <div class="bar b3"></div>
+                <div class="bar b4"></div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="caption">Focus → 1 session is enough</div>
-    </div>
-  </div>
+      </div><!-- /card -->
+    </div><!-- /scale -->
+  </div><!-- /stage -->
 
   <script>
+    // --- realtime time ---
     const hEl = document.getElementById("h");
     const mEl = document.getElementById("m");
     const pad = n => String(n).padStart(2,"0");
@@ -280,6 +281,27 @@
       hEl.textContent = pad(now.getHours());
       mEl.textContent = pad(now.getMinutes());
     }
+
+    // --- auto scale to fit Notion iframe ---
+    function autoScale(){
+      const baseW = 820;
+      const baseH = 520;
+      const el = document.getElementById("scale");
+      if(!el) return;
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Fit both width & height, keep proportions
+      const s = Math.min(w / baseW, h / baseH);
+
+      el.style.transform = `scale(${s})`;
+      el.style.width = baseW + "px";
+      el.style.height = baseH + "px";
+    }
+
+    window.addEventListener("resize", autoScale);
+    autoScale();
     tick();
     setInterval(tick, 1000);
   </script>
