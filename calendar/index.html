@@ -9,28 +9,50 @@
 :root{
   --ink:#111;
   --radius:18px;
+  --base-w: 560;      /* design width reference */
+  --base-h: 520;      /* design height reference */
+  --scale: 1;         /* will be set by JS */
 }
 
-*{ box-sizing:border-box; }
-
-body{
+/* ✅ kill scrollbars inside Notion iframe */
+html, body{
+  width:100%;
+  height:100%;
   margin:0;
+  overflow:hidden;
   background:transparent;
   font-family:"Comic Sans MS","Patrick Hand","Segoe UI",sans-serif;
   color:var(--ink);
 }
 
-.wrapper{
-  width:100%;
-  max-width:560px;
-  margin:0 auto;
-  padding:12px;
+*{ box-sizing:border-box; }
+
+/* Stage takes iframe size */
+.stage{
+  width:100vw;
+  height:100vh;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
 }
 
+/* This box is scaled to fit */
+.scale-root{
+  width: calc(var(--base-w) * 1px);
+  height: calc(var(--base-h) * 1px);
+  transform: scale(var(--scale));
+  transform-origin: center;
+}
+
+/* ===== CARD ===== */
 .card{
-  background:#fff;
+  width:100%;
+  height:100%;
+  background:#fff;                /* ✅ keep white */
   border-radius:var(--radius);
   padding:16px 14px 20px;
+  display:flex;
+  flex-direction:column;
 }
 
 /* ===== HEADER (ARROWS + MONTH) ===== */
@@ -38,13 +60,13 @@ body{
   display:grid;
   grid-template-columns: 44px 1fr 44px;
   align-items:center;
-  gap:8px;
-  margin:6px 0 14px;
+  gap:15px;
+  margin:10px 0 54px;
 }
 
 .month{
   text-align:center;
-  font-size:22px;
+  font-size:32px;
   letter-spacing:2px;
   text-transform:uppercase;
   line-height:1.2;
@@ -82,18 +104,20 @@ body{
   display:grid;
   grid-template-columns:repeat(7,1fr);
   text-align:center;
-  font-size:14px;
+  font-size:22px;
   margin-bottom:6px;
 }
 .weekdays div{ opacity:.85; }
 
 /* ===== CALENDAR GRID ===== */
 .calendar{
+  flex:1;                          /* fills remaining card height */
   display:grid;
   grid-template-columns:repeat(7,1fr);
-  gap:14px 18px; /* airy like your reference */
+  gap:14px 18px;                   /* airy like reference */
   text-align:center;
   padding: 6px 4px 0;
+  align-content:start;
 }
 
 .day{
@@ -103,9 +127,7 @@ body{
   border-radius:12px;
 }
 
-.empty{
-  visibility:hidden;
-}
+.empty{ visibility:hidden; }
 
 /* ===== TODAY (HAND-DRAWN BLACK BOX) ===== */
 .today{
@@ -114,7 +136,6 @@ body{
   color:#fff;
   font-weight:800;
 
-  /* imperfect hand-drawn shape */
   border-radius: 12px 22px 14px 26px;
   transform: rotate(-1.2deg);
   box-shadow: 1px 1px 0 #000;
@@ -130,17 +151,11 @@ body{
   pointer-events:none;
 }
 
-.day span{
-  display:inline-block;
-}
+.day span{ display:inline-block; }
+.today span{ transform: rotate(1.2deg); }
 
-/* keep number readable inside rotated highlight */
-.today span{
-  transform: rotate(1.2deg);
-}
-
-/* ===== RESPONSIVE ===== */
-@media(max-width:420px){
+/* ✅ extra safety: if Notion makes iframe super tiny, reduce gaps a bit */
+@media (max-width: 360px){
   .calendar{ gap:10px 12px; }
   .day{ font-size:18px; padding:8px 0; }
   .month{ font-size:20px; }
@@ -149,36 +164,57 @@ body{
 </head>
 
 <body>
-<div class="wrapper">
-  <div class="card">
+  <div class="stage">
+    <div class="scale-root" id="scaleRoot">
+      <div class="card">
 
-    <!-- HEADER: left arrow - month label - right arrow -->
-    <div class="header">
-      <button class="navbtn" id="prevBtn" aria-label="Previous month" title="Previous month">
-        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
+        <div class="header">
+          <button class="navbtn" id="prevBtn" aria-label="Previous month" title="Previous month">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
 
-      <div class="month" id="monthLabel">—</div>
+          <div class="month" id="monthLabel">—</div>
 
-      <button class="navbtn" id="nextBtn" aria-label="Next month" title="Next month">
-        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-      </button>
+          <button class="navbtn" id="nextBtn" aria-label="Next month" title="Next month">
+            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <div class="weekdays">
+          <div>M</div><div>T</div><div>W</div>
+          <div>T</div><div>F</div><div>S</div><div>S</div>
+        </div>
+
+        <div class="calendar" id="calGrid"></div>
+
+      </div>
     </div>
-
-    <!-- WEEKDAYS -->
-    <div class="weekdays">
-      <div>M</div><div>T</div><div>W</div>
-      <div>T</div><div>F</div><div>S</div><div>S</div>
-    </div>
-
-    <!-- GRID -->
-    <div class="calendar" id="calGrid"></div>
-
   </div>
-</div>
 
 <script>
-/* Dynamic calendar with prev/next, Monday-first, highlight TODAY only when viewing current month. No API. */
+/* ===== Auto-fit: remove scrollbars by scaling content to iframe size ===== */
+function fitToViewport(){
+  const root = document.documentElement;
+  const baseW = parseFloat(getComputedStyle(root).getPropertyValue("--base-w")) || 560;
+  const baseH = parseFloat(getComputedStyle(root).getPropertyValue("--base-h")) || 520;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // give tiny breathing room to avoid 1px overflow (Notion sometimes adds rounding)
+  const pad = 8;
+
+  const sx = (vw - pad) / baseW;
+  const sy = (vh - pad) / baseH;
+  const s  = Math.min(sx, sy, 1); // never upscale beyond 1
+
+  root.style.setProperty("--scale", String(Math.max(s, 0.5))); // clamp minimum readability
+}
+
+window.addEventListener("resize", fitToViewport);
+document.addEventListener("DOMContentLoaded", fitToViewport);
+
+/* ===== Dynamic calendar with prev/next, Monday-first, highlight TODAY only in current month ===== */
 (function(){
   const monthNames = [
     "January","February","March","April","May","June",
@@ -195,29 +231,22 @@ body{
   const todayM = today.getMonth();
   const todayD = today.getDate();
 
-  // state: current viewing month (start at today)
   let viewY = todayY;
   let viewM = todayM;
 
-  function daysInMonth(y, m){ // m: 0..11
+  function daysInMonth(y, m){
     return new Date(y, m + 1, 0).getDate();
   }
 
   function mondayFirstOffset(y, m){
-    // JS getDay(): Sun=0..Sat=6
-    // Convert to Mon=0..Sun=6
     const first = new Date(y, m, 1);
-    return (first.getDay() + 6) % 7;
+    return (first.getDay() + 6) % 7; // Mon=0 .. Sun=6
   }
 
   function render(){
-    // label
     label.textContent = `${monthNames[viewM]} ${viewY}`.toUpperCase();
-
-    // grid reset
     grid.innerHTML = "";
 
-    // empties
     const offset = mondayFirstOffset(viewY, viewM);
     for(let i=0;i<offset;i++){
       const e = document.createElement("div");
@@ -226,24 +255,23 @@ body{
       grid.appendChild(e);
     }
 
-    // days
     const dim = daysInMonth(viewY, viewM);
     for(let d=1; d<=dim; d++){
       const cell = document.createElement("div");
       cell.className = "day";
       cell.innerHTML = `<span>${d}</span>`;
 
-      // highlight only if the current view is the real current month/year
       if(viewY === todayY && viewM === todayM && d === todayD){
         cell.classList.add("today");
       }
-
       grid.appendChild(cell);
     }
+
+    // after rerender, re-fit (some months need 6 rows)
+    fitToViewport();
   }
 
   function shiftMonth(delta){
-    // delta = -1 or +1
     viewM += delta;
     if(viewM < 0){ viewM = 11; viewY -= 1; }
     if(viewM > 11){ viewM = 0; viewY += 1; }
@@ -253,11 +281,9 @@ body{
   prevBtn.addEventListener("click", () => shiftMonth(-1));
   nextBtn.addEventListener("click", () => shiftMonth(1));
 
-  // initial render
   render();
 })();
 </script>
 
 </body>
 </html>
-
