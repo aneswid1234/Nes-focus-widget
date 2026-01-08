@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Notion Calendar</title>
+<title>Notion Calendar (50%)</title>
 
 <style>
 :root{
   --ink:#111;
-  --radius:18px;
+  --radius:14px;
 }
 
 *{ box-sizing:border-box; }
@@ -17,10 +17,10 @@ html, body{
   width:100%;
   height:100%;
   margin:0;
-  overflow:hidden;                 /* ✅ stop scroll inside iframe */
   background:transparent;
   font-family:"Comic Sans MS","Patrick Hand","Segoe UI",sans-serif;
   color:var(--ink);
+  overflow:hidden; /* prevent inner scrollbars */
 }
 
 .stage{
@@ -31,35 +31,29 @@ html, body{
   overflow:hidden;
 }
 
-/* ✅ we will scale this container using zoom */
-.scale-root{
-  display:inline-block;
-  zoom: 1;                         /* will be set by JS */
-}
-
-/* ===== CARD ===== */
+/* ===== CARD (50% base) ===== */
 .card{
-  width:560px;                     /* design width */
-  background:#fff;                 /* keep white */
+  width:280px;                 /* ✅ 50% of 560px */
+  background:#fff;
   border-radius:var(--radius);
-  padding:14px 14px 16px;
+  padding:10px 10px 12px;
 }
 
 /* ===== HEADER ===== */
 .header{
   display:grid;
-  grid-template-columns:44px 1fr 44px;
+  grid-template-columns:28px 1fr 28px; /* smaller arrows */
   align-items:center;
-  gap:10px;
-  margin:6px 0 12px;
+  gap:6px;
+  margin:4px 0 8px;
 }
 
 .month{
   text-align:center;
   text-transform:uppercase;
-  letter-spacing:2px;
+  letter-spacing:1.2px;
   line-height:1.1;
-  font-size:32px;                  /* you can bump this */
+  font-size:16px;              /* ✅ ~50% of 32px */
 }
 
 /* Arrow buttons */
@@ -68,25 +62,24 @@ html, body{
   border:none;
   background:transparent;
   cursor:pointer;
-  width:44px;
-  height:36px;
+  width:28px;
+  height:26px;
   display:grid;
   place-items:center;
-  border-radius:12px;
+  border-radius:10px;
   color:var(--ink);
-  transition: transform .08s ease, background .2s ease;
 }
 .navbtn:hover{ background: rgba(0,0,0,.06); }
 .navbtn:active{ transform: translateY(1px); }
 
 .navbtn svg{
-  width:18px;
-  height:18px;
-  stroke:var(--ink);
-  stroke-width:3;
-  fill:none;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+  width:14px;
+  height:14px;
+  stroke: var(--ink);
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ===== WEEKDAYS ===== */
@@ -94,8 +87,8 @@ html, body{
   display:grid;
   grid-template-columns:repeat(7,1fr);
   text-align:center;
-  margin-bottom:8px;
-  font-size:18px;
+  margin-bottom:6px;
+  font-size:10px;              /* ✅ ~50% of 18px */
 }
 .weekdays div{ opacity:.85; }
 
@@ -104,107 +97,82 @@ html, body{
   display:grid;
   grid-template-columns:repeat(7,1fr);
   text-align:center;
-  gap:14px 18px;
-  padding:4px 2px 0;
+  gap:7px 9px;                 /* ✅ ~50% of 14px 18px */
+  padding:2px 0 0;
   align-content:start;
 }
 
 .day{
-  font-size:22px;
+  font-size:11px;              /* ✅ ~50% of 22px */
   line-height:1;
-  padding:10px 0;
-  border-radius:12px;
+  padding:5px 0;               /* ✅ ~50% of 10px */
+  border-radius:10px;
 }
 
 .empty{ visibility:hidden; }
 
-/* ===== TODAY (HAND-DRAWN BLACK BOX) ===== */
+/* ===== TODAY (HAND-DRAWN BLACK BOX, scaled down) ===== */
 .today{
   position:relative;
   background:#000;
   color:#fff;
   font-weight:800;
-  border-radius:12px 22px 14px 26px;
-  transform: rotate(-1.2deg);
-  box-shadow:1px 1px 0 #000;
+
+  border-radius: 10px 18px 12px 20px;
+  transform: rotate(-1.1deg);
+  box-shadow: 1px 1px 0 #000;
 }
+
 .today::before{
   content:"";
   position:absolute;
-  inset:3px;
+  inset:2px;
   border:2px solid #000;
-  border-radius:18px 12px 22px 14px;
-  transform: rotate(1.4deg);
+  border-radius: 14px 10px 18px 12px;
+  transform: rotate(1.2deg);
   pointer-events:none;
 }
-.day span{ display:inline-block; }
-.today span{ transform: rotate(1.2deg); }
 
-/* Optional: when super small, reduce spacing a bit (still no scroll) */
-@media (max-width: 380px){
-  .calendar{ gap:10px 12px; }
-  .day{ font-size:18px; padding:8px 0; }
-  .weekdays{ font-size:16px; }
-  .month{ font-size:26px; }
+.day span{ display:inline-block; }
+.today span{ transform: rotate(1.1deg); }
+
+/* Extra: if Notion makes the embed extremely narrow, shrink a bit more */
+@media (max-width: 240px){
+  .card{ width:240px; }
+  .month{ font-size:14px; }
+  .day{ font-size:10px; }
+  .calendar{ gap:6px 7px; }
 }
 </style>
 </head>
 
 <body>
 <div class="stage">
-  <div class="scale-root" id="scaleRoot">
-    <div class="card">
+  <div class="card">
 
-      <div class="header">
-        <button class="navbtn" id="prevBtn" aria-label="Previous month" title="Previous month">
-          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
+    <div class="header">
+      <button class="navbtn" id="prevBtn" aria-label="Previous month" title="Previous month">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
 
-        <div class="month" id="monthLabel">—</div>
+      <div class="month" id="monthLabel">—</div>
 
-        <button class="navbtn" id="nextBtn" aria-label="Next month" title="Next month">
-          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-        </button>
-      </div>
-
-      <div class="weekdays">
-        <div>M</div><div>T</div><div>W</div>
-        <div>T</div><div>F</div><div>S</div><div>S</div>
-      </div>
-
-      <div class="calendar" id="calGrid"></div>
-
+      <button class="navbtn" id="nextBtn" aria-label="Next month" title="Next month">
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
     </div>
+
+    <div class="weekdays">
+      <div>M</div><div>T</div><div>W</div>
+      <div>T</div><div>F</div><div>S</div><div>S</div>
+    </div>
+
+    <div class="calendar" id="calGrid"></div>
   </div>
 </div>
 
 <script>
-/* ✅ Fit using ZOOM (fixes Notion scrollbars caused by transform scaling) */
-function fitToViewport(){
-  const el = document.getElementById("scaleRoot");
-  if(!el) return;
-
-  // measure at zoom 1
-  el.style.zoom = 1;
-
-  // allow layout settle
-  const rect = el.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const pad = 12;
-
-  const sx = (vw - pad) / rect.width;
-  const sy = (vh - pad) / rect.height;
-
-  // allow smaller so it always fits
-  const s = Math.min(sx, sy, 1);
-
-  el.style.zoom = Math.max(s, 0.22); // go small to avoid crop
-}
-
-window.addEventListener("resize", () => requestAnimationFrame(fitToViewport));
-
-/* ===== Dynamic calendar with prev/next, Monday-first, today highlight only in current month ===== */
+/* Dynamic calendar (prev/next), Monday-first, highlight TODAY only when viewing the current month. */
 (function(){
   const monthNames = [
     "January","February","March","April","May","June",
@@ -224,7 +192,10 @@ window.addEventListener("resize", () => requestAnimationFrame(fitToViewport));
   let viewY = todayY;
   let viewM = todayM;
 
-  function daysInMonth(y, m){ return new Date(y, m + 1, 0).getDate(); }
+  function daysInMonth(y, m){
+    return new Date(y, m + 1, 0).getDate();
+  }
+
   function mondayFirstOffset(y, m){
     const first = new Date(y, m, 1);
     return (first.getDay() + 6) % 7; // Mon=0 .. Sun=6
@@ -253,8 +224,6 @@ window.addEventListener("resize", () => requestAnimationFrame(fitToViewport));
       }
       grid.appendChild(cell);
     }
-
-    requestAnimationFrame(fitToViewport);
   }
 
   function shiftMonth(delta){
@@ -267,13 +236,7 @@ window.addEventListener("resize", () => requestAnimationFrame(fitToViewport));
   prevBtn.addEventListener("click", () => shiftMonth(-1));
   nextBtn.addEventListener("click", () => shiftMonth(1));
 
-  document.addEventListener("DOMContentLoaded", () => {
-    render();
-    requestAnimationFrame(fitToViewport);
-    // extra retry for Notion iframe reflow
-    setTimeout(fitToViewport, 150);
-    setTimeout(fitToViewport, 400);
-  });
+  render();
 })();
 </script>
 
